@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+
+# Environments & Secrets
+.env
+.env.*
+*.secret
+credentials.json
+token.json
+
+# Databases & Data Folders
+data/
+papers/
+*.db
+*.sqlite
+*.sqlite3
+
+# Frameworks
+.streamlit/
+*.log
+
+# MacOS specific files
+.DS_Store
