@@ -47,6 +47,14 @@ def init_sqlite_db():
     conn.commit()
     conn.close()
 
+def check_paper_exists(document_id: str) -> bool:
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT 1 FROM paper_metadata WHERE document_id = ?", (document_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
 def insert_paper_metadata(metadata: PaperMetadata):
     conn = get_sqlite_conn()
     cursor = conn.cursor()

@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.pdf_utils import extract_text_from_pdf_file
 from src.llm_client import extract_metadata_from_paper
-from src.database import insert_paper_metadata, insert_paper_vectors
+from src.database import insert_paper_metadata, insert_paper_vectors, check_paper_exists
 
 load_dotenv()
 
@@ -40,6 +40,11 @@ def ingest_volume(target_volume: str):
             
             document_id = pdf_name.replace(".pdf", "").strip()
             pdf_path = os.path.join(issue_path, pdf_name)
+            
+            if check_paper_exists(document_id):
+                print(f"⏩ {document_id} already exists in database. Skipping API extraction.")
+                success_count += 1
+                continue
             
             print(f"\nProcessing {document_id} from {target_volume} / {issue_name} ...")
             
