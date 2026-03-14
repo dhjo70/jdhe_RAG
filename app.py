@@ -339,20 +339,32 @@ if st.session_state.current_conversation_id is None:
             
     with col1:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.button("📊 정량적 통계 질문\n\n\"Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?\"", key="ex1", use_container_width=True):
-            prefill_example("Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?")
+        if st.session_state.search_mode == "meta_analysis":
+            if st.button("📊 정량적 통계 질문\n\n\"Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?\"", key="ex1_m", use_container_width=True):
+                prefill_example("Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?")
+        else:
+            if st.button("🧠 정성적 의미 검색\n\n\"다문화 교육이나 다양성(Diversity)을 다룬 논문들의 핵심 결론들을 요약해줘.\"", key="ex1_d", use_container_width=True):
+                prefill_example("다문화 교육이나 다양성(Diversity)을 다룬 논문들의 핵심 결론들을 요약해줘.")
         st.markdown("</div>", unsafe_allow_html=True)
         
     with col2:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.button("🧠 정성적 의미 검색\n\n\"다문화 교육이나 다양성(Diversity)을 다룬 논문들의 핵심 결론들을 요약해줘.\"", key="ex2", use_container_width=True):
-            prefill_example("다문화 교육이나 다양성(Diversity)을 다룬 논문들의 핵심 결론들을 요약해줘.")
+        if st.session_state.search_mode == "meta_analysis":
+            if st.button("👥 특정 논문 추출\n\n\"소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.\"", key="ex2_m", use_container_width=True):
+                prefill_example("소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.")
+        else:
+            if st.button("🧐 심층 분석 질문\n\n\"교수진의 태도가 유학생들의 학업 성취도에 미치는 영향은 무엇인가요?\"", key="ex2_d", use_container_width=True):
+                prefill_example("교수진의 태도가 유학생들의 학업 성취도에 미치는 영향은 무엇인가요?")
         st.markdown("</div>", unsafe_allow_html=True)
         
     with col3:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.button("🎯 복합 분석 (통계+의미)\n\n\"2018년부터 2020년 사이에 '질적 연구'를 진행한 논문들의 주요 연구 대상은 누구인가요?\"", key="ex3", use_container_width=True):
-            prefill_example("2018년부터 2020년 사이에 '질적 연구'를 진행한 논문들의 주요 연구 대상은 누구인가요?")
+        if st.session_state.search_mode == "meta_analysis":
+            if st.button("📋 전체 목록 조회\n\n\"JDHE 저널에 등록된 모든 양적 연구 논문 리스트를 보여줘.\"", key="ex3_m", use_container_width=True):
+                prefill_example("JDHE 저널에 등록된 모든 양적 연구 논문 리스트를 보여줘.")
+        else:
+            if st.button("🎯 복합 분석 (통계+의미)\n\n\"2018년부터 2020년 사이에 '질적 연구'를 진행한 논문들의 주요 연구 대상은 누구인가요?\"", key="ex3_d", use_container_width=True):
+                prefill_example("2018년부터 2020년 사이에 '질적 연구'를 진행한 논문들의 주요 연구 대상은 누구인가요?")
         st.markdown("</div>", unsafe_allow_html=True)
         
     # Inject JS to fill the chat_input if a card was clicked
