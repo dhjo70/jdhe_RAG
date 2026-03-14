@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import re
 from dotenv import load_dotenv
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -49,7 +50,11 @@ def ingest_volume(target_volume: str):
                     fail_count += 1
                     continue
                     
-                metadata = extract_metadata_from_paper(paper_text, document_id, target_volume, issue_name)
+                # Strip text prefixes (e.g., 'Vol13' -> '13')
+                vol_num = re.sub(r'\D', '', target_volume)
+                issue_num = re.sub(r'\D', '', issue_name)
+                    
+                metadata = extract_metadata_from_paper(paper_text, document_id, vol_num, issue_num)
                 
                 if metadata:
                     insert_paper_metadata(metadata)
