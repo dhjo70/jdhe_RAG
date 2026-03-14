@@ -113,9 +113,21 @@ st.markdown("""
 
 # --- Session State Management ---
 if "token" not in st.session_state:
-    st.session_state.token = None
+    # Try to recover from query params on refresh
+    if "token" in st.query_params:
+        st.session_state.token = st.query_params["token"]
+    else:
+        st.session_state.token = None
+        
 if "current_conversation_id" not in st.session_state:
-    st.session_state.current_conversation_id = None
+    if "chat_id" in st.query_params:
+        try:
+            st.session_state.current_conversation_id = int(st.query_params["chat_id"])
+        except ValueError:
+            st.session_state.current_conversation_id = None
+    else:
+        st.session_state.current_conversation_id = None
+        
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -135,10 +147,12 @@ def delete_confirm_dialog(conv_id: int):
         if st.button("Delete", type="primary", use_container_width=True, icon=":material/delete:"):
             res = requests.delete(f"{API_BASE_URL}/conversations/{conv_id}", headers=get_headers())
             if res.status_code == 200:
-                if st.session_state.current_conversation_id == conv_id:
-                    st.session_state.current_conversation_id = None
-                    st.session_state.messages = []
-                st.rerun()
+                    if st.session_state.current_conversation_id == conv_id:
+                        st.session_state.current_conversation_id = None
+                        st.session_state.messages = []
+                        if "chat_id" in st.query_params:
+                            del st.query_params["chat_id"]
+                    st.rerun()
             else:
                 st.error("Failed to delete.")
 
@@ -161,8 +175,11 @@ if not st.session_state.token:
                     res = requests.post(f"{API_BASE_URL}/token", data={"username": login_user, "password": login_pass})
                     res.raise_for_status()
                     st.session_state.token = res.json()["access_token"]
+                    st.query_params["token"] = st.session_state.token
                     st.session_state.messages = []
                     st.session_state.current_conversation_id = None
+                    if "chat_id" in st.query_params:
+                        del st.query_params["chat_id"]
                     st.rerun()
                 except requests.exceptions.HTTPError as e:
                     if e.response.status_code == 401:
@@ -202,7 +219,16 @@ if not st.session_state.token:
 
 # --- Sidebar: Conversation History ---
 with st.sidebar:
-    st.header("Workspace History")
+    top_c1, top_c2 = st.columns([1, 4], vertical_alignment="center")
+    with top_c1:
+        if st.button("", icon=":material/home:", help="홈 (초기 화면)"):
+            st.session_state.current_conversation_id = None
+            st.session_state.messages = []
+            if "chat_id" in st.query_params:
+                del st.query_params["chat_id"]
+            st.rerun()
+    with top_c2:
+        st.header("Workspace History")
     
     if st.button("새 채팅", icon=":material/add:", type="secondary", use_container_width=True):
         try:
@@ -210,6 +236,7 @@ with st.sidebar:
             res.raise_for_status()
             new_conv = res.json()
             st.session_state.current_conversation_id = new_conv["id"]
+            st.query_params["chat_id"] = str(new_conv["id"])
             st.session_state.messages = []
             st.rerun()
         except requests.exceptions.RequestException as e:
@@ -268,6 +295,7 @@ with st.sidebar:
             with col1:
                 if st.button(btn_label, key=f"conv_{conv['id']}", use_container_width=True, icon=icon_name):
                     st.session_state.current_conversation_id = conv["id"]
+                    st.query_params["chat_id"] = str(conv["id"])
                     # Fetch history
                     hist_res = requests.get(f"{API_BASE_URL}/conversations/{conv['id']}/messages", headers=get_headers())
                     if hist_res.status_code == 200:
@@ -296,7 +324,11 @@ with st.sidebar:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("로그아웃", icon=":material/logout:"):
         st.session_state.token = None
+        if "token" in st.query_params:
+            del st.query_params["token"]
         st.session_state.current_conversation_id = None
+        if "chat_id" in st.query_params:
+            del st.query_params["chat_id"]
         st.session_state.messages = []
         st.rerun()
 
@@ -314,6 +346,7 @@ if prompt and st.session_state.current_conversation_id is None:
         res.raise_for_status()
         new_conv = res.json()
         st.session_state.current_conversation_id = new_conv["id"]
+        st.query_params["chat_id"] = str(new_conv["id"])
         st.session_state.messages = []
     except Exception as e:
         st.error("새 대화를 생성하지 못했습니다.")
