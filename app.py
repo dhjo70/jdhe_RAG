@@ -202,16 +202,6 @@ if not st.session_state.token:
 
 # --- Sidebar: Conversation History ---
 with st.sidebar:
-    st.markdown("<h3 style='margin-bottom: 0px;'>검색 및 분석 모드</h3>", unsafe_allow_html=True)
-    search_mode_display = st.radio(
-        "검색 모드",
-        ["📊 메타 데이터 통계 분석\n(논문 전체 카운트 및 테이블 표)", "🧠 심층 문맥/의미 검색\n(내용 기반 Q&A)"],
-        index=0,
-        label_visibility="collapsed"
-    )
-    st.session_state.search_mode_val = "meta_analysis" if "통계" in search_mode_display else "deep_insight"
-    st.divider()
-
     st.header("Workspace History")
     
     if st.button("새 채팅", icon=":material/add:", type="secondary", use_container_width=True):
@@ -225,6 +215,16 @@ with st.sidebar:
         except requests.exceptions.RequestException as e:
             st.error("새 대화를 생성하지 못했습니다.")
             
+    st.divider()
+
+    st.markdown("<h3 style='margin-bottom: 0px;'>검색 및 분석 모드</h3>", unsafe_allow_html=True)
+    search_mode_display = st.radio(
+        "검색 모드",
+        ["📊 메타 데이터 통계 분석\n(논문 전체 카운트 및 테이블 표)", "🧠 심층 문맥/의미 검색\n(내용 기반 Q&A)"],
+        index=0,
+        label_visibility="collapsed"
+    )
+    st.session_state.search_mode_val = "meta_analysis" if "통계" in search_mode_display else "deep_insight"
     st.divider()
     
     # Load conversations list

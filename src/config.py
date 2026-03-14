@@ -11,7 +11,7 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY가 설정되지 않았습니다. .env 파일에 추가해주세요.")
 
 
-MODEL_NAME = 'gemini-2.5-flash'
+MODEL_NAME = 'gemini-2.5-flash-lite'
 
 # Database Settings
 SQLITE_DB_PATH = 'data/metadata.db'

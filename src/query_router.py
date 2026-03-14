@@ -144,7 +144,7 @@ def generate_meta_analysis_response(user_query: str, context: str) -> str:
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.0)
+        config=types.GenerateContentConfig(temperature=0.1)
     )
     return response.text
 
