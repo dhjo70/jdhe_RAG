@@ -383,8 +383,8 @@ if st.session_state.current_conversation_id is None:
     with col2:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
         if st.session_state.search_mode_val == "meta_analysis":
-            if st.button("👥 특정 논문 추출\n\n\"소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.\"", key="ex2_m", use_container_width=True):
-                prefill_example("소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.")
+            if st.button("👥 특정 논문 추출\n\n\"소수인종에 관한 논문을 찾아줘.\"", key="ex2_m", use_container_width=True):
+                prefill_example("소수인종에 관한 논문을 찾아줘.")
         else:
             if st.button("🧐 심층 분석 질문\n\n\"교수진의 태도가 유학생들의 학업 성취도에 미치는 영향은 무엇인가요?\"", key="ex2_d", use_container_width=True):
                 prefill_example("교수진의 태도가 유학생들의 학업 성취도에 미치는 영향은 무엇인가요?")
