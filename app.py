@@ -339,7 +339,7 @@ if st.session_state.current_conversation_id is None:
             
     with col1:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.session_state.search_mode == "meta_analysis":
+        if st.session_state.search_mode_val == "meta_analysis":
             if st.button("📊 정량적 통계 질문\n\n\"Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?\"", key="ex1_m", use_container_width=True):
                 prefill_example("Vol 13 Issue 4에서 출판된 논문의 총 개수는 몇 개인가요?")
         else:
@@ -349,7 +349,7 @@ if st.session_state.current_conversation_id is None:
         
     with col2:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.session_state.search_mode == "meta_analysis":
+        if st.session_state.search_mode_val == "meta_analysis":
             if st.button("👥 특정 논문 추출\n\n\"소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.\"", key="ex2_m", use_container_width=True):
                 prefill_example("소수인종이면서 성적소수자를 다룬 논문들을 찾아줘.")
         else:
@@ -359,7 +359,7 @@ if st.session_state.current_conversation_id is None:
         
     with col3:
         st.markdown("<div class='example-btn'>", unsafe_allow_html=True)
-        if st.session_state.search_mode == "meta_analysis":
+        if st.session_state.search_mode_val == "meta_analysis":
             if st.button("📋 전체 목록 조회\n\n\"JDHE 저널에 등록된 모든 양적 연구 논문 리스트를 보여줘.\"", key="ex3_m", use_container_width=True):
                 prefill_example("JDHE 저널에 등록된 모든 양적 연구 논문 리스트를 보여줘.")
         else:
