@@ -20,7 +20,7 @@ class SearchQuery(BaseModel):
     )
     search_keywords: List[str] = Field(
         default_factory=list,
-        description="키워드 매칭(BM25)을 위한 핵심 단어 목록 (예: ['자기효능감', '학업 성취도']). '전체 논문', '모든 논문' 처럼 특정 주제가 없는 경우 빈 리스트 [] 반환."
+        description="키워드 매칭(BM25)을 위한 핵심 단어 목록. 검색 리콜(Recall)을 높이기 위해 원본 단어뿐 아니라 동의어, 유의어, 영어 약어(예: 성적소수자 -> LGBT, LGBQ, Sexual Minority) 등을 배열에 모두 포함시키세요. '전체 논문' 처럼 특정 주제가 없는 경우 빈 리스트 [] 반환."
     )
     semantic_query: str = Field(
         description="문맥적 의미 유사도 검색(Vector DB)을 위한 자연어 질문. 원래의 질문을 검색에 최적화하여 작성."
@@ -30,6 +30,7 @@ def analyze_query(user_query: str) -> SearchQuery:
     prompt = f"""
     당신은 JDHE(Journal of Diversity in Higher Education) 논문 DB의 하이브리드 검색 분석기입니다.
     사용자 질문을 분석하여 3가지 검색 엔진(메타데이터 필터, 키워드 검색, 의미론적 검색)에 각각 들어갈 파라미터를 추출하세요.
+    - [중요]: search_keywords 추출 시, 영문 논문 검색임을 감안하여 한글 키워드의 영어 번역, 약자, 동의어(예: 성적소수자 -> LGBT, LGBQ, Sexual Minority, Queer 등)를 파악할 수 있는 대로 모두 리스트에 포함시켜 검색 범위를 강제로 넓혀야 합니다.
     
     질문: "{user_query}"
     """
