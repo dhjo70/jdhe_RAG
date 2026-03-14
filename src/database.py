@@ -41,17 +41,18 @@ def init_sqlite_db():
             participants_description TEXT,
             participants_target_groups JSON,
             participants_sample_size INTEGER,
-            keywords JSON
+            keywords JSON,
+            ingest_status TEXT DEFAULT 'PROCESSING'
         )
     """)
     conn.commit()
     conn.close()
 
 def check_paper_exists(document_id: str) -> bool:
-    # 1. Check SQLite
+    # 1. Check SQLite for COMPLETED status
     conn = get_sqlite_conn()
     cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM paper_metadata WHERE document_id = ?", (document_id,))
+    cursor.execute("SELECT 1 FROM paper_metadata WHERE document_id = ? AND ingest_status = 'COMPLETED'", (document_id,))
     row = cursor.fetchone()
     conn.close()
     
@@ -72,7 +73,7 @@ def check_paper_exists(document_id: str) -> bool:
         
     return True
 
-def insert_paper_metadata(metadata: PaperMetadata):
+def insert_paper_metadata(metadata: PaperMetadata, status: str = 'PROCESSING'):
     conn = get_sqlite_conn()
     cursor = conn.cursor()
     
@@ -85,8 +86,8 @@ def insert_paper_metadata(metadata: PaperMetadata):
             research_topic, theoretical_framework, methodology_type, methodology_details,
             data_collection_method, data_analysis_method,
             participants_description, participants_target_groups,
-            participants_sample_size, keywords
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            participants_sample_size, keywords, ingest_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         metadata.document_id,
         metadata.title,
@@ -102,8 +103,16 @@ def insert_paper_metadata(metadata: PaperMetadata):
         metadata.participants.description,
         target_groups_json,
         metadata.participants.sample_size_integer,
-        keywords_json
+        keywords_json,
+        status
     ))
+    conn.commit()
+    conn.close()
+
+def mark_paper_completed(document_id: str):
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE paper_metadata SET ingest_status = 'COMPLETED' WHERE document_id = ?", (document_id,))
     conn.commit()
     conn.close()
 

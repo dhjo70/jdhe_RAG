@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.pdf_utils import extract_text_from_pdf_file
 from src.llm_client import extract_metadata_from_paper
-from src.database import insert_paper_metadata, insert_paper_vectors, check_paper_exists
+from src.database import insert_paper_metadata, insert_paper_vectors, check_paper_exists, mark_paper_completed
 
 load_dotenv()
 
@@ -62,8 +62,18 @@ def ingest_volume(target_volume: str):
                 metadata = extract_metadata_from_paper(paper_text, document_id, vol_num, issue_num)
                 
                 if metadata:
-                    insert_paper_metadata(metadata)
+                    # Guard: Force the metadata ID to match the filename exactly, preventing LLM smart-quote hallucinations
+                    metadata.document_id = document_id
+                    
+                    # 1. Save to SQLite with status = PROCESSING
+                    insert_paper_metadata(metadata, status="PROCESSING")
+                    
+                    # 2. Extract and save chunks to ChromaDB
                     insert_paper_vectors(document_id, paper_text)
+                    
+                    # 3. Mark as COMPLETED in SQLite
+                    mark_paper_completed(document_id)
+                    
                     print(f"✅ Ingested {document_id} successfully.")
                     success_count += 1
                 else:
