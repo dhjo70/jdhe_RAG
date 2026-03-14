@@ -217,10 +217,10 @@ with st.sidebar:
             
     st.divider()
 
-    st.markdown("<h3 style='margin-bottom: 0px;'>검색 및 분석 모드</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='margin-bottom: 0px;'>분석 모드</h3>", unsafe_allow_html=True)
     search_mode_display = st.radio(
         "검색 모드",
-        ["📊 메타 데이터 통계 분석\n(논문 전체 카운트 및 테이블 표)", "🧠 심층 문맥/의미 검색\n(내용 기반 Q&A)"],
+        ["📊 통계 분석 (메타데이터 기반)", "🧠 심층 분석 (논문 내용 기반)"],
         index=0,
         label_visibility="collapsed"
     )
