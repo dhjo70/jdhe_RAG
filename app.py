@@ -335,7 +335,7 @@ st.markdown("<h2 style='color: #1F1F1F; font-weight: 500; font-size: 22px; margi
 
 
 
-prompt = st.chat_input("Gemini RAG에게 물어보기...")
+prompt = st.chat_input("Journal Research AI에게 물어보기...")
 
 # 1. Create a new conversation if sending a message from the initial state
 if prompt and st.session_state.current_conversation_id is None:
