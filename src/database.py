@@ -48,12 +48,29 @@ def init_sqlite_db():
     conn.close()
 
 def check_paper_exists(document_id: str) -> bool:
+    # 1. Check SQLite
     conn = get_sqlite_conn()
     cursor = conn.cursor()
     cursor.execute("SELECT 1 FROM paper_metadata WHERE document_id = ?", (document_id,))
     row = cursor.fetchone()
     conn.close()
-    return row is not None
+    
+    if row is None:
+        return False
+        
+    # 2. Check ChromaDB
+    try:
+        collection = get_collection()
+        results = collection.get(
+            where={"document_id": document_id},
+            limit=1
+        )
+        if not results or not results.get("ids"):
+            return False
+    except Exception:
+        return False
+        
+    return True
 
 def insert_paper_metadata(metadata: PaperMetadata):
     conn = get_sqlite_conn()
