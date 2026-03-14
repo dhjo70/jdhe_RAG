@@ -293,6 +293,15 @@ with st.sidebar:
 # --- Main Chat App ---
 st.markdown("<h2 style='color: #1F1F1F; font-weight: 500; font-size: 22px; margin-top: -20px;'>JDHE <span style='font-size: 16px; color: #5F6368; font-weight: 400;'>Journal Research AI</span></h2>", unsafe_allow_html=True)
 
+search_mode_display = st.radio(
+    "검색 모드",
+    ["📊 메타 데이터 통계 분석 (논문 전수조사 및 테이블 요약)", "🧠 심층 문맥/의미 검색 (내용 기반 Q&A)"],
+    index=0,
+    horizontal=True,
+    label_visibility="collapsed"
+)
+search_mode_val = "meta_analysis" if "통계" in search_mode_display else "deep_insight"
+
 prompt = st.chat_input("Gemini RAG에게 물어보기...")
 
 # 1. Create a new conversation if sending a message from the initial state
@@ -423,7 +432,8 @@ if prompt:
             with st.status("생각하는 과정 표시...", expanded=True) as status:
                 payload = {
                     "query": prompt,
-                    "conversation_id": st.session_state.current_conversation_id
+                    "conversation_id": st.session_state.current_conversation_id,
+                    "search_mode": search_mode_val
                 }
                 response = requests.post(
                     f"{API_BASE_URL}/query", 

@@ -45,8 +45,106 @@ def init_sqlite_db():
             ingest_status TEXT DEFAULT 'PROCESSING'
         )
     """)
+    
+    # Create FTS5 Virtual Table for BM25 Keyword Search
+    cursor.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS paper_fts USING fts5(
+            document_id UNINDEXED, 
+            title, 
+            research_topic, 
+            keywords
+        )
+    """)
+    
+    # Triggers to keep FTS in sync with the main table
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS paper_metadata_after_insert AFTER INSERT ON paper_metadata 
+        BEGIN
+            INSERT INTO paper_fts(rowid, document_id, title, research_topic, keywords) 
+            VALUES (new.rowid, new.document_id, new.title, new.research_topic, new.keywords);
+        END;
+    """)
+    
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS paper_metadata_after_delete AFTER DELETE ON paper_metadata 
+        BEGIN
+            INSERT INTO paper_fts(paper_fts, rowid, document_id, title, research_topic, keywords) 
+            VALUES ('delete', old.rowid, old.document_id, old.title, old.research_topic, old.keywords);
+        END;
+    """)
+    
+    cursor.execute("""
+        CREATE TRIGGER IF NOT EXISTS paper_metadata_after_update AFTER UPDATE ON paper_metadata 
+        BEGIN
+            INSERT INTO paper_fts(paper_fts, rowid, document_id, title, research_topic, keywords) 
+            VALUES ('delete', old.rowid, old.document_id, old.title, old.research_topic, old.keywords);
+            
+            INSERT INTO paper_fts(rowid, document_id, title, research_topic, keywords) 
+            VALUES (new.rowid, new.document_id, new.title, new.research_topic, new.keywords);
+        END;
+    """)
+    
     conn.commit()
     conn.close()
+
+def search_bm25_keywords(keywords: list[str], top_k: int = 20) -> list[tuple[str, float]]:
+    if not keywords:
+        return []
+        
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    
+    # FTS5 uses string queries, e.g. "keyword1" OR "keyword2"
+    # We construct a simple OR query to maximize recall
+    escaped_keywords = [f'"{kw.replace("\"", "")}"' for kw in keywords]
+    fts_query = " OR ".join(escaped_keywords)
+    
+    # FTS5 rank is heavily negative for better matches. We return the absolute value or reciprocal.
+    cursor.execute("""
+        SELECT document_id, rank
+        FROM paper_fts 
+        WHERE paper_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
+    """, (fts_query, top_k))
+    
+    results = [(row['document_id'], abs(row['rank'])) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+def search_metadata_filters(filters: dict) -> list[str]:
+    if not filters:
+        # If no filters exist, we can technically return all document_ids, but that's inefficient.
+        # Usually, if there are no filters, the caller will not rely on this pool.
+        # Here we will just return everything so the intersection works mathematically later.
+        conn = get_sqlite_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT document_id FROM paper_metadata WHERE ingest_status = 'COMPLETED'")
+        rows = cursor.fetchall()
+        conn.close()
+        return [r['document_id'] for r in rows]
+
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    
+    query = "SELECT document_id FROM paper_metadata WHERE ingest_status = 'COMPLETED'"
+    params = []
+    
+    for key, value in filters.items():
+        if isinstance(value, list) and value:
+            # e.g., year in [2021, 2022]
+            placeholders = ', '.join(['?'] * len(value))
+            query += f" AND {key} IN ({placeholders})"
+            params.extend(value)
+        elif value is not None and value != "":
+            # e.g., methodology_type = '질적 연구'
+            query += f" AND {key} = ?"
+            params.append(value)
+            
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+    return [r['document_id'] for r in rows]
 
 def check_paper_exists(document_id: str) -> bool:
     # 1. Check SQLite for COMPLETED status

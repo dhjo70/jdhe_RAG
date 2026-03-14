@@ -22,6 +22,7 @@ app = FastAPI(title="JDHE Hybrid RAG API")
 class QueryRequest(BaseModel):
     query: str
     conversation_id: int
+    search_mode: str = "meta_analysis"
 
 class QueryResponse(BaseModel):
     intent: dict
@@ -108,7 +109,7 @@ def query_endpoint(req: QueryRequest, current_user: User = Depends(get_current_u
                 pass
                 
         # Pass conversation_id to process_query_stream so it can save the assistant's final answer
-        return StreamingResponse(process_query_stream(req.query, req.conversation_id), media_type="application/x-ndjson")
+        return StreamingResponse(process_query_stream(req.query, req.conversation_id, req.search_mode), media_type="application/x-ndjson")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
