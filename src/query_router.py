@@ -18,9 +18,9 @@ class SearchQuery(BaseModel):
     sql_filters: SqlFilters = Field(
         description="정확히 일치해야 하는 메타데이터 조건 객체."
     )
-    search_keywords: List[str] = Field(
-        default_factory=list,
-        description="키워드 매칭(BM25)을 위한 핵심 단어 목록. 검색 리콜(Recall)을 높이기 위해 원본 단어뿐 아니라 동의어, 유의어, 영어 약어(예: 성적소수자 -> LGBT, LGBQ, Sexual Minority) 등을 배열에 모두 포함시키세요. '전체 논문' 처럼 특정 주제가 없는 경우 빈 리스트 [] 반환."
+    fts_query: str = Field(
+        default="",
+        description="SQLite FTS5 MATCH 쿼리 문법. 반드시 괄호()를 사용하여 동의어들을 OR 그룹으로 묶고, 서로 구분되는 조건은 AND로 묶어서 연산자 우선순위를 명확히 하세요. (예: '(\"A\" OR \"A 유의어\") AND (\"B\" OR \"B 유의어\")'). 주제가 없으면 빈 문자열 반환."
     )
     semantic_query: str = Field(
         description="문맥적 의미 유사도 검색(Vector DB)을 위한 자연어 질문. 원래의 질문을 검색에 최적화하여 작성."
@@ -30,7 +30,9 @@ def analyze_query(user_query: str) -> SearchQuery:
     prompt = f"""
     당신은 JDHE(Journal of Diversity in Higher Education) 논문 DB의 하이브리드 검색 분석기입니다.
     사용자 질문을 분석하여 3가지 검색 엔진(메타데이터 필터, 키워드 검색, 의미론적 검색)에 각각 들어갈 파라미터를 추출하세요.
-    - [중요]: search_keywords 추출 시, 영문 논문 검색임을 감안하여 한글 키워드의 영어 번역, 약자, 동의어(예: 성적소수자 -> LGBT, LGBQ, Sexual Minority, Queer 등)를 파악할 수 있는 대로 모두 리스트에 포함시켜 검색 범위를 강제로 넓혀야 합니다.
+    - [중요]: fts_query 추출 시, SQLite FTS5 문법을 정확히 준수하세요. 단어들은 반드시 큰따옴표(")로 묶고, 동의어 확장은 괄호()로 묶은 그룹 내부에서 OR 연산하며, 조건들끼리는 AND 연산하세요.
+    - [중요]: 검색어의 영어 번역, 약자, 동의어(예: 성적소수자 -> LGBT, Sexual Minority 등)를 파악하여 OR 그룹 안에 넣으세요.
+    - 예시: "소수인종이면서 성적소수자인 논문" -> '("소수인종" OR "minority" OR "people of color") AND ("성적소수자" OR "LGBT" OR "Queer" OR "sexual minority")'
     
     질문: "{user_query}"
     """
@@ -198,9 +200,13 @@ def process_query_stream(user_query: str, conversation_id: int, search_mode: str
     yield yield_status(f"🔍 [1] 메타데이터 필터링 실행 중... (필터: {search_params.sql_filters.model_dump(exclude_none=True)})")
     sql_doc_ids = search_metadata_filters(search_params.sql_filters.model_dump(exclude_none=True))
     
-    yield yield_status(f"🔍 [2] BM25 키워드 검색 실행 중... (키워드: {search_params.search_keywords})")
-    bm25_results = search_bm25_keywords(search_params.search_keywords)
-    bm25_doc_ids = [doc_id for doc_id, score in bm25_results]
+    yield yield_status(f"🔍 [2] BM25 키워드(FTS5) 검색 실행 중... (쿼리: {search_params.fts_query})")
+    try:
+        bm25_results = search_bm25_keywords(search_params.fts_query)
+        bm25_doc_ids = [doc_id for doc_id, score in bm25_results]
+    except Exception as e:
+        yield yield_status(f"⚠️ BM25 검색 오류 (FTS5 문법 에러 가능성): {e}. 키워드 검색을 건너뜁니다.")
+        bm25_doc_ids = []
     
     if search_mode == "deep_insight":
         yield yield_status(f"🔍 [3] 의미론적(Vector DB) 검색 실행 중... (의미 질의: '{search_params.semantic_query}')")
@@ -237,7 +243,7 @@ def process_query_stream(user_query: str, conversation_id: int, search_mode: str
         yield yield_status("📊 조건에 맞는 논문 전수 조사를 위한 교집합 분석 중입니다...")
         
         has_sql = bool(search_params.sql_filters.model_dump(exclude_none=True))
-        has_bm25 = bool(search_params.search_keywords)
+        has_bm25 = bool(search_params.fts_query.strip())
         
         all_matched_docs = []
         if has_sql and has_bm25:

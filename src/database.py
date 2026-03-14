@@ -87,17 +87,12 @@ def init_sqlite_db():
     conn.commit()
     conn.close()
 
-def search_bm25_keywords(keywords: list[str], top_k: int = 20) -> list[tuple[str, float]]:
-    if not keywords:
+def search_bm25_keywords(fts_query: str, top_k: int = 50) -> list[tuple[str, float]]:
+    if not fts_query or not fts_query.strip():
         return []
         
     conn = get_sqlite_conn()
     cursor = conn.cursor()
-    
-    # FTS5 uses string queries, e.g. "keyword1" OR "keyword2"
-    # We construct a simple OR query to maximize recall
-    escaped_keywords = [f'"{kw.replace("\"", "")}"' for kw in keywords]
-    fts_query = " OR ".join(escaped_keywords)
     
     # FTS5 rank is heavily negative for better matches. We return the absolute value or reciprocal.
     cursor.execute("""
