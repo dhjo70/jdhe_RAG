@@ -228,19 +228,17 @@ with st.sidebar:
                 del st.query_params["chat_id"]
             st.rerun()
     with top_c2:
-        st.header("Workspace History")
-    
-    if st.button("새 채팅", icon=":material/add:", type="secondary", use_container_width=True):
-        try:
-            res = requests.post(f"{API_BASE_URL}/conversations", json={"title": "New Conversation"}, headers=get_headers())
-            res.raise_for_status()
-            new_conv = res.json()
-            st.session_state.current_conversation_id = new_conv["id"]
-            st.query_params["chat_id"] = str(new_conv["id"])
-            st.session_state.messages = []
-            st.rerun()
-        except requests.exceptions.RequestException as e:
-            st.error("새 대화를 생성하지 못했습니다.")
+        if st.button("새 채팅", icon=":material/add:", type="secondary", use_container_width=True):
+            try:
+                res = requests.post(f"{API_BASE_URL}/conversations", json={"title": "New Conversation"}, headers=get_headers())
+                res.raise_for_status()
+                new_conv = res.json()
+                st.session_state.current_conversation_id = new_conv["id"]
+                st.query_params["chat_id"] = str(new_conv["id"])
+                st.session_state.messages = []
+                st.rerun()
+            except requests.exceptions.RequestException as e:
+                st.error("새 대화를 생성하지 못했습니다.")
             
     st.divider()
 
