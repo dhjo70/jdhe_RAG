@@ -4,7 +4,22 @@ import pandas as pd
 import json
 import streamlit.components.v1 as components
 
-API_BASE_URL = "http://localhost:8000"
+import socket
+
+def get_local_ip():
+    try:
+        # Create a dummy socket connection to resolve the local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+# Dynamically set the API base URL to the machine's local IP address
+# This ensures that other users on the local network connect to the hosting machine, not their own localhost.
+API_BASE_URL = f"http://{get_local_ip()}:8000"
 st.set_page_config(page_title="JDHE Analytics", layout="wide", initial_sidebar_state="expanded")
 
 # --- Custom Built-in CSS ---
