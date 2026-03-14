@@ -155,7 +155,7 @@ def generate_final_response(user_query: str, context: str) -> str:
     prompt = f"""
     당신은 JDHE 저널 논문 분석 전문 AI입니다.
     오직 아래 [제공된 컨텍스트]만을 기반으로 사용자의 질문에 답변하세요.
-    응답 마지막에는 반드시 사용된 근거 논문의 리스트(References)를 작성하세요.
+    응답 마지막에는 반드시 사용된 근거 논문의 리스트(References)를 작성하되, 메타 분석 테이블 포맷과 동일하게 `| No. | Volume | Issue | 논문 제목 |` 구조의 마크다운 테이블(Markdown Table)로 작성해야 합니다. No. 열은 1번부터 오름차순으로 매기세요.
     컨텍스트에 없는 내용을 지어내면(Hallucination) 절대 안 됩니다.
     
     [사용자 질문]
@@ -232,8 +232,21 @@ def process_query_stream(user_query: str, conversation_id: int, search_mode: str
         yield yield_status(f"✅ 최고 적합도의 논문 {len(top_k_docs)}건을 추출 완료했습니다. 컨텍스트 구성 중...")
         
         context_chunks = fetch_document_chunks(top_k_docs)
-        context_str = "\n---\n".join(context_chunks)
         sql_result = retrieve_metadata_for_docs(top_k_docs)
+        
+        # Inject metadata into the context chunks so the LLM can build the reference table
+        meta_mapped = {row['document_id']: row for row in sql_result}
+        enriched_chunks = []
+        for chunk in context_chunks:
+            doc_id = chunk.split("[Source: ")[1].split("]")[0]
+            if doc_id in meta_mapped:
+                m = meta_mapped[doc_id]
+                meta_str = f"[Metadata] Title: {m.get('title')} | Volume: {m.get('volume')} | Issue: {m.get('issue')}\n"
+                enriched_chunks.append(meta_str + chunk)
+            else:
+                enriched_chunks.append(chunk)
+                
+        context_str = "\n---\n".join(enriched_chunks)
         
         yield yield_status("💡 하이브리드 심층 검색 결과를 기반으로 최종 답변을 구성 중입니다...")
         final_answer = generate_final_response(user_query, context_str)
