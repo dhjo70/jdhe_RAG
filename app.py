@@ -431,7 +431,7 @@ for msg in st.session_state.messages:
                     except Exception:
                         pass
         if msg.get("intent"):
-            st.caption(f"Query Intent: {msg['intent']}")
+            pass
 
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -499,7 +499,7 @@ if prompt:
                         except Exception:
                             pass
 
-            st.caption(f"Target Intent: {intent_type}")
+
             st.session_state.messages.append({
                 "role": "assistant", 
                 "content": final_answer,
