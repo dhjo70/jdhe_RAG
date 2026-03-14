@@ -19,7 +19,8 @@ class SearchQuery(BaseModel):
         description="정확히 일치해야 하는 메타데이터 조건 객체."
     )
     search_keywords: List[str] = Field(
-        description="키워드 매칭(BM25)을 위한 핵심 단어 목록 (예: ['자기효능감', '학업 성취도']). 최소 1개 이상 추출."
+        default_factory=list,
+        description="키워드 매칭(BM25)을 위한 핵심 단어 목록 (예: ['자기효능감', '학업 성취도']). '전체 논문', '모든 논문' 처럼 특정 주제가 없는 경우 빈 리스트 [] 반환."
     )
     semantic_query: str = Field(
         description="문맥적 의미 유사도 검색(Vector DB)을 위한 자연어 질문. 원래의 질문을 검색에 최적화하여 작성."
@@ -131,7 +132,7 @@ def generate_meta_analysis_response(user_query: str, context: str) -> str:
     1. **전체 요약**: "조건에 부합하는 논문은 총 O건입니다. 볼륨 및 이슈별 분포는 다음과 같습니다." 
     2. **볼륨/이슈별 통계**: 각 볼륨과 이슈별 논문 개수를 리스트나 트리 형태로 요약하세요.
     3. **상세 논문 리스트 (Markdown Table)**: 
-       반드시 테이블 컬럼을 `| Volume | Issue | Document ID (파일명) | 논문 제목 | 연구 방법론 |` 로 구성하세요.
+       반드시 테이블 컬럼을 `| No. | Volume | Issue | 논문 제목 |` 로 구성하고, 첫 번째 `No.` 열에는 1번부터 오름차순으로 순번을 매기세요.
 
     [사용자 질문]
     {user_query}
@@ -264,7 +265,7 @@ def process_query_stream(user_query: str, conversation_id: int, search_mode: str
             
         context_str += "\nDetailed List:\n"
         for row in sql_result:
-            context_str += f"- Document ID: {row.get('document_id')} | Title: {row.get('title')} | Vol: {row.get('volume')} Issue: {row.get('issue')} | Methodology: {row.get('methodology_type')}\n"
+            context_str += f"- Title: {row.get('title')} | Vol: {row.get('volume')} Issue: {row.get('issue')}\n"
         
         yield yield_status("💡 조사된 통계 및 논문 목록을 기반으로 요약 마크다운 테이블을 생성 중입니다...")
         final_answer = generate_meta_analysis_response(user_query, context_str)
