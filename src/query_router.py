@@ -13,6 +13,8 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 class SqlFilters(BaseModel):
     publication_year: Optional[int] = Field(None, description="출판 연도 조건 (예: 2021). 조건이 명확할 때만 채우세요.")
     methodology_type: Optional[str] = Field(None, description="반드시 다음 중 하나: '질적 연구', '양적 연구', '혼합 연구', '문헌 연구', '기타'")
+    volume: Optional[str] = Field(None, description="출판 볼륨(권) 번호 (예: 13이나 '13'). 조건이 명확할 때만 채우세요.")
+    issue: Optional[str] = Field(None, description="출판 이슈(호) 번호 (예: 4나 '4'). 조건이 명확할 때만 채우세요.")
 
 class SearchQuery(BaseModel):
     sql_filters: SqlFilters = Field(
