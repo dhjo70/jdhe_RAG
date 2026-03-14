@@ -126,13 +126,13 @@ def retrieve_metadata_for_docs(doc_ids: list[str]) -> list[dict]:
     sql = f"SELECT * FROM paper_metadata WHERE document_id IN ({placeholders})"
     return execute_sql(sql, doc_ids)
 
-def generate_meta_analysis_response(user_query: str, context: str) -> str:
+def generate_meta_analysis_response(user_query: str, context: str, total_count: int) -> str:
     prompt = f"""
     당신은 JDHE 저널 논문 메타 분석 전문 AI입니다.
     사용자의 질문에 대해 아래 [통계 및 추출된 논문 데이터]를 바탕으로,
     반드시 다음 형식으로 답변을 작성하세요.
 
-    1. **전체 요약**: "조건에 부합하는 논문은 총 O건입니다. 볼륨 및 이슈별 분포는 다음과 같습니다." 
+    1. **전체 요약**: "전체 논문 총 {total_count}편 중 조건에 부합하는 논문은 총 O건입니다. 볼륨 및 이슈별 분포는 다음과 같습니다." 
     2. **볼륨/이슈별 통계**: 각 볼륨과 이슈별 논문 개수를 리스트나 트리 형태로 요약하세요.
     3. **상세 논문 리스트 (Markdown Table)**: 
        반드시 테이블 컬럼을 `| No. | Volume | Issue | 논문 제목 |` 로 구성하고, 첫 번째 `No.` 열에는 1번부터 오름차순으로 순번을 매기세요.
@@ -288,7 +288,9 @@ def process_query_stream(user_query: str, conversation_id: int, search_mode: str
             context_str += f"- Title: {row.get('title')} | Vol: {row.get('volume')} Issue: {row.get('issue')}\n"
         
         yield yield_status("💡 조사된 통계 및 논문 목록을 기반으로 요약 마크다운 테이블을 생성 중입니다...")
-        final_answer = generate_meta_analysis_response(user_query, context_str)
+        total_count_res = execute_sql("SELECT COUNT(*) as count FROM paper_metadata")
+        total_count = total_count_res[0].get('count', 0) if total_count_res else 0
+        final_answer = generate_meta_analysis_response(user_query, context_str, total_count)
         context_chunks = []
     
     sql_data_json = json.dumps(sql_result, ensure_ascii=False) if sql_result else None
